@@ -10,11 +10,24 @@ dials in the the dashboard.
 The Carloop also interfaces a Linux laptop or Raspberry Pi running
 `canutils`, a suite of program for car hacking.
 
+## Hardware
+
+The 3 knobs must be connect this way:
+- Connect the top pin of each knob to common power.
+- Connect the bottom pin of each knob to common ground.
+- Connect the middle pin of each pin to different signal wires
+
+- A2: common power
+- A3: common ground
+- A4: engine speed signal
+- A5: vehicle speed signal
+- A6: engine temperature signal
+
 ## Instructions
 
 Compile and flash the firmware using the Particle CLI
 
 ```
-carloop/dashboard_demo$ particle flash <carloop_device_name> firmware
+carloop/dashboard_demo$ particle flash <carloop_device_name> Firmware
 ```
 
