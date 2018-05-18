@@ -31,6 +31,8 @@ uint16_t knobValueLow[knobCount] = { 30, 30, 30 };
 uint16_t knobValueHigh[knobCount] = { 4060, 4060, 4060 };
 uint16_t knobPercent[knobCount] = { 0 }; // 100% = 32768
 const uint16_t knob100Percent = 32768;
+uint8_t pedalPosition = 0;
+const uint8_t pedalPositionMin = 0x28;
 
 /* every
  * Helper than runs a function at a regular millisecond interval
@@ -121,7 +123,11 @@ void transmitCAN() {
   every(2, [] {
     engineSpeedMessage.id = 0x0C9;
     engineSpeedMessage.len = 8;
-    engineSpeedMessage.data[1] = knobPercent[0] / 256; // 128 = 8000 rpm
+    if (pedalPosition > 0) {
+      engineSpeedMessage.data[1] = pedalPosition;
+    } else {
+      engineSpeedMessage.data[1] = knobPercent[0] / 256; // 128 = 8000 rpm
+    }
     carloop.can().transmit(engineSpeedMessage);
     printReceivedMessage(engineSpeedMessage);
 
@@ -155,6 +161,20 @@ void transmitCAN() {
     carloop.can().transmit(message);
     printReceivedMessage(message);
   });
+
+  every(100, [] {
+    // Request pedal position
+    CANMessage message;
+
+    message.id = 0x7E0;
+    message.len = 3;
+    message.data[0] = 0x02; // 2 bytes
+    message.data[1] = 0x01; // OBD-II Read PID
+    message.data[2] = 0x49; // Accelerator pedal position
+
+    carloop.can().transmit(message);
+    printReceivedMessage(message);
+  });
 }
 
 void applicationCanReceiver(CANMessage &message) {
@@ -167,5 +187,10 @@ void applicationCanReceiver(CANMessage &message) {
     engineSpeedMessage.data[5] = message.data[5];
     engineSpeedMessage.data[6] = message.data[6];
     engineSpeedMessage.data[7] = message.data[7];
+  }
+
+  if (message.id == 0x7E8) {
+    uint8_t pos = message.data[3];
+    pedalPosition = pos > pedalPositionMin ? pos - pedalPositionMin : 0;
   }
 }
